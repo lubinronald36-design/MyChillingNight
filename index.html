@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MyChillingTime — Interactive Notes</title>
+  <style>
+    body{font-family:system-ui,Arial,sans-serif;max-width:820px;margin:28px auto;padding:0 16px;line-height:1.45}
+    h1{margin:0 0 6px}
+    .box{padding:14px 16px;border:1px solid #ddd;border-radius:12px;margin:12px 0}
+    button{padding:10px 14px;border-radius:10px;border:1px solid #111;background:#111;color:#fff;cursor:pointer}
+    kbd{padding:2px 6px;border:1px solid #bbb;border-radius:6px;background:#f7f7f7}
+    .keys{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .chip{padding:8px 10px;border:1px solid #ddd;border-radius:999px}
+    .small{color:#555;font-size:14px}
+    .ok{color:#0a7a2f;font-weight:600}
+  </style>
+</head>
+
+<body>
+  <h1>MyChillingTime 🎧🎹</h1>
+  <div class="small">Beat + real musical notes (Do–Re–Mi… generated live)</div>
+
+  <div class="box">
+    <button id="startBtn">Start Beat (unlock audio)</button>
+    <div id="status" class="small" style="margin-top:10px;">Status: not started</div>
+  </div>
+
+  <div class="box">
+    <div><b>Play notes while the beat loops:</b></div>
+    <div class="keys">
+      <div class="chip"><kbd>A</kbd> = Do</div>
+      <div class="chip"><kbd>S</kbd> = Re</div>
+      <div class="chip"><kbd>D</kbd> = Mi</div>
+      <div class="chip"><kbd>F</kbd> = Fa</div>
+      <div class="chip"><kbd>G</kbd> = Sol</div>
+      <div class="chip"><kbd>H</kbd> = La</div>
+      <div class="chip"><kbd>J</kbd> = Si</div>
+      <div class="chip"><kbd>K</kbd> = Do</div>
+    </div>
+    <p class="small" style="margin-top:10px;">
+      Tip: Click <b>Start Beat</b> once (browser rule), then press keys freely.
+    </p>
+  </div>
+
+  <!-- Beat (keep bott.mp3 in SAME folder as this index.html) -->
+  <audio id="beat" src="bott.mp3" loop></audio>
+
+  <script>
+  const beat = document.getElementById("bott");
+  let audioCtx;
+
+  document.getElementById("startBtn").addEventListener("click", async () => {
+    try {
+      // 1️⃣ Create & resume AudioContext (IMPORTANT)
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      await audioCtx.resume();
+
+      // 2️⃣ Now play the beat
+      beat.volume = 0.6;
+      await beat.play();
+
+      document.getElementById("status").textContent =
+        "Status: beat playing ✅ (keys ready)";
+    } catch (e) {
+      console.error(e);
+      document.getElementById("status").textContent =
+        "Status: click Start again";
+    }
+  });
+</script>
+</body>
+</html>
