@@ -13,10 +13,8 @@
     .keys{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
     .chip{padding:8px 10px;border:1px solid #ddd;border-radius:999px}
     .small{color:#555;font-size:14px}
-    .ok{color:#0a7a2f;font-weight:600}
   </style>
 </head>
-
 <body>
   <h1>MyChillingTime 🎧🎹</h1>
   <div class="small">Beat + real musical notes (Do–Re–Mi… generated live)</div>
@@ -36,40 +34,83 @@
       <div class="chip"><kbd>G</kbd> = Sol</div>
       <div class="chip"><kbd>H</kbd> = La</div>
       <div class="chip"><kbd>J</kbd> = Si</div>
-      <div class="chip"><kbd>K</kbd> = Do</div>
+      <div class="chip"><kbd>K</kbd> = Do (high)</div>
     </div>
     <p class="small" style="margin-top:10px;">
-      Tip: Click <b>Start Beat</b> once (browser rule), then press keys freely.
+      Tip: Click <b>Start Beat</b> once, then press keys freely.
     </p>
   </div>
 
-  <!-- Beat (keep bott.mp3 in SAME folder as this index.html) -->
-  <audio id="beat" src="bott.mp3" loop></audio>
+  <!-- Beat file must be in SAME folder as this index.html -->
+  <audio id="beat" src="bott.mp3" loop preload="auto"></audio>
 
   <script>
-  const beat = document.getElementById("bott");
-  let audioCtx;
+    const beat = document.getElementById("beat");
+    const statusEl = document.getElementById("status");
+    const startBtn = document.getElementById("startBtn");
 
-  document.getElementById("startBtn").addEventListener("click", async () => {
-    try {
-      // 1️⃣ Create & resume AudioContext (IMPORTANT)
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let audioCtx;
+
+    // Map keys to frequencies (C major scale)
+    const noteMap = {
+      a: 261.63, // C4 Do
+      s: 293.66, // D4 Re
+      d: 329.63, // E4 Mi
+      f: 349.23, // F4 Fa
+      g: 392.00, // G4 Sol
+      h: 440.00, // A4 La
+      j: 493.88, // B4 Si
+      k: 523.25  // C5 Do high
+    };
+
+    function playNote(freq) {
+      if (!audioCtx) return;
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = "sine";
+      osc.frequency.value = freq;
+
+      // quick attack + release so it feels snappy
+      const now = audioCtx.currentTime;
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.25, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.28);
+    }
+
+    startBtn.addEventListener("click", async () => {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        await audioCtx.resume();
+
+        beat.volume = 0.6;
+        await beat.play();
+
+        statusEl.textContent = "Status: beat playing ✅ (keys ready)";
+      } catch (e) {
+        console.error(e);
+        statusEl.textContent = "Status: beat failed ❌ (check file name + same folder)";
       }
+    });
+
+    document.addEventListener("keydown", async (e) => {
+      const key = e.key.toLowerCase();
+      const freq = noteMap[key];
+      if (!freq) return;
+
+      // If user presses keys before clicking Start, try to unlock audio anyway
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       await audioCtx.resume();
 
-      // 2️⃣ Now play the beat
-      beat.volume = 0.6;
-      await beat.play();
-
-      document.getElementById("status").textContent =
-        "Status: beat playing ✅ (keys ready)";
-    } catch (e) {
-      console.error(e);
-      document.getElementById("status").textContent =
-        "Status: click Start again";
-    }
-  });
-</script>
+      playNote(freq);
+    });
+  </script>
 </body>
 </html>
